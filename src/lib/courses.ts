@@ -1,6 +1,7 @@
 import {request} from 'graphql-request'
 import config from './config'
-import {last} from 'lodash'
+import {sanityClient} from 'utils/sanity-client'
+import groq from 'groq'
 
 export async function loadCourse(slug: string) {
   const query = /* GraphQL */ `
@@ -177,3 +178,53 @@ export async function loadAllCourses(retryCount = 0): Promise<any> {
     }
   }
 }
+
+export async function loadCourseDependencies(slug: string) {
+  const slugs = {
+    course: slug,
+  }
+  const data = await sanityClient.fetch(
+    groq`
+      {
+        'course': ${courseDependenciesQuery},
+      }
+  `,
+    slugs,
+  )
+
+  return data.course
+}
+
+const courseDependenciesQuery = groq`
+*[slug.current == $course][0]{
+  name,
+  title,
+  summary,
+  path,
+  'slug': resources[0]->_id,
+  'instructor': collaborators[]->[role == 'instructor']{
+    'name': person->name,
+    'image': person->image.url
+  }[0],
+  'illustrator': collaborators[]->[role == 'illustrator']{
+    'name': person->name,
+    'image': person->image.url
+  }[0],
+  image,
+	features[],
+  'essentialQuestionsFromSanity': essentialQuestions[]->{
+    question 
+   },
+	"pairWithResources": related[]->{
+    name,
+    title,
+    byline,
+    'description': summary,
+    path,
+    image,
+    'instructor': collaborators[]->[role == 'instructor']{
+    'name': person->name,
+  }[0]
+}
+}
+`

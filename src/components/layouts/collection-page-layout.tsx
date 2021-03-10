@@ -31,6 +31,7 @@ import ClosedCaptionIcon from '../icons/closed-captioning'
 type CoursePageLayoutProps = {
   lessons: any
   course: any
+  courseDependenciesFromSanity: any
   ogImageUrl: string
 }
 
@@ -109,9 +110,17 @@ const PeopleCompleted: React.FunctionComponent<{count: number}> = ({count}) => (
 const CollectionPageLayout: React.FunctionComponent<CoursePageLayoutProps> = ({
   lessons = [],
   course,
+  courseDependenciesFromSanity,
   ogImageUrl,
 }) => {
   const courseDependencies: any = getDependencies(course.slug)
+  const mergedCourseDependencies: any = {
+    ...courseDependencies,
+    ...courseDependenciesFromSanity,
+  }
+
+  console.log('courseDependenciesFromSanity: ', courseDependenciesFromSanity)
+
   const [isFavorite, setIsFavorite] = React.useState(false)
   const [clickable, setIsClickable] = React.useState(true)
 
@@ -183,7 +192,13 @@ const CollectionPageLayout: React.FunctionComponent<CoursePageLayoutProps> = ({
     customOgImage,
     totalCourseModules,
     multiModuleLineheight,
-  } = courseDependencies
+    essentialQuestionsFromSanity,
+  } = mergedCourseDependencies
+
+  // todo: return data in expected shape from sanity
+  const mergedEssentialQuestions = essentialQuestionsFromSanity
+    ? essentialQuestionsFromSanity.map((q: any) => q.question)
+    : essentialQuestions
 
   const {
     title,
@@ -574,21 +589,23 @@ const CollectionPageLayout: React.FunctionComponent<CoursePageLayoutProps> = ({
                   </div>
                 </div>
               )}
-              {essentialQuestions && (
+              {mergedEssentialQuestions && (
                 <div className="mt-8 border border-gray-100 dark:border-gray-700 rounded-md p-5">
                   <h2 className="text-lg font-semibold mb-3">
                     Questions to Reflect Upon:
                   </h2>
                   <div className="prose dark:prose-dark">
                     <ul className="grid grid-cols-1 md:gap-x-5">
-                      {essentialQuestions?.map((essentialQuestion: string) => (
-                        <li
-                          key={essentialQuestion}
-                          className="text-gray-900 dark:text-gray-100 leading-6"
-                        >
-                          {essentialQuestion}
-                        </li>
-                      ))}
+                      {mergedEssentialQuestions?.map(
+                        (essentialQuestion: string) => (
+                          <li
+                            key={essentialQuestion}
+                            className="text-gray-900 dark:text-gray-100 leading-6"
+                          >
+                            {essentialQuestion}
+                          </li>
+                        ),
+                      )}
                     </ul>
                   </div>
                 </div>

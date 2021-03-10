@@ -1,6 +1,6 @@
 import * as React from 'react'
 import useSWR from 'swr'
-import {loadCourse} from 'lib/courses'
+import {loadCourse, loadCourseDependencies} from 'lib/courses'
 import {loadPlaylist, loadAuthedPlaylistForUser} from 'lib/playlists'
 import {FunctionComponent} from 'react'
 import {GetServerSideProps} from 'next'
@@ -12,9 +12,13 @@ import get from 'lodash/get'
 
 type CourseProps = {
   course: any
+  courseDependenciesFromSanity: any
 }
 
-const Course: FunctionComponent<CourseProps> = ({course: initialCourse}) => {
+const Course: FunctionComponent<CourseProps> = ({
+  course: initialCourse,
+  courseDependenciesFromSanity,
+}) => {
   const {data} = useSWR(`${initialCourse.slug}`, loadAuthedPlaylistForUser)
 
   const course = {...initialCourse, ...data}
@@ -34,6 +38,7 @@ const Course: FunctionComponent<CourseProps> = ({course: initialCourse}) => {
     <CollectionPageLayout
       lessons={courseLessons}
       course={course}
+      courseDependenciesFromSanity={courseDependenciesFromSanity}
       ogImageUrl={`https://og-image-react-egghead.now.sh/playlists/${slug}?v=20201103`}
     />
   )
@@ -42,6 +47,11 @@ const Course: FunctionComponent<CourseProps> = ({course: initialCourse}) => {
 export default Course
 
 export const getServerSideProps: GetServerSideProps = async ({res, params}) => {
+  const courseDependenciesFromSanity =
+    params && (await loadCourseDependencies(params.slug as string))
+
+  console.log('courseDependencies: ', courseDependenciesFromSanity)
+
   const course =
     params &&
     (process.env.NEXT_PUBLIC_PLAYLISTS_ARE_COURSES === 'true'
@@ -58,6 +68,7 @@ export const getServerSideProps: GetServerSideProps = async ({res, params}) => {
     return {
       props: {
         course,
+        courseDependenciesFromSanity,
       },
     }
   }
